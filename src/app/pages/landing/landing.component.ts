@@ -43,27 +43,31 @@ export class LandingComponent implements OnInit {
   ourWorkVisible = false;
   contactVisible = false;
 
-  // Dummy data
+  // Updated data
   services = [
     {
-      title: 'Social Media Management',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.',
-      image: 'dummy-photo.png'
+      title: 'Software',
+      code: '(46152)',
+      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      icon: 'software-wwd.png'
     },
     {
-      title: 'Web Development',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.',
-      image: 'dummy-photo.png'
+      title: 'Hardware',
+      code: '(46599)',
+      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      icon: 'hardware-wwd.png'
     },
     {
-      title: 'Mobile App Development',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.',
-      image: 'dummy-photo.png'
+      title: 'Multimedia',
+      code: '(61929)',
+      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      icon: 'media-wwd.png'
     },
     {
-      title: 'Digital Marketing',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.',
-      image: 'dummy-photo.png'
+      title: 'Computer',
+      code: '(46511)',
+      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      icon: 'computer-wwd.png'
     }
   ];
 
@@ -84,11 +88,9 @@ export class LandingComponent implements OnInit {
     // Navbar hide and show logic
     if (Math.abs(scrollTop - this.lastScrollTop) > this.scrollThreshold) {
       if (scrollTop > this.lastScrollTop && scrollTop > 200) {
-
         // Scroll ke bawah
         this.navbarVisible = false;
       } else {
-
         // Scroll ke atas
         this.navbarVisible = true;
       }
