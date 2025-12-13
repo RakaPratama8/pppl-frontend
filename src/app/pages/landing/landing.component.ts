@@ -116,17 +116,19 @@ export class LandingComponent implements OnInit {
     return rect.top <= windowHeight * 0.75;
   }
 
-  scrollToSection(sectionId: string) {
-    // Jika section adalah 'build-with-us', navigate ke halaman form
-    if (sectionId === 'build-with-us') {
-      this.router.navigate(['/build']);
-      return;
-    }
-
-    // Untuk section lainnya, scroll seperti biasa
+  scrollToSection(sectionId: string): void {
     const element = document.getElementById(sectionId);
     if (element) {
+      console.log('Element found, scrolling to:', sectionId);
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      console.log('Element not found for section:', sectionId);
     }
+  }
+
+  // action redirect ke halaman lain
+  navigateToOtherPage(path: string) {
+    console.log(`Navigating to ${path} page`);
+    this.router.navigate([path]);
   }
 }

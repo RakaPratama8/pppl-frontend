@@ -10,6 +10,11 @@ interface TimelineItem {
   icon?: string;
 }
 
+interface VisionAndMission {
+  vision: string;
+  mission: string[];
+}
+
 @Component({
   selector: 'app-who-we-are',
   standalone: true,
@@ -77,6 +82,16 @@ export class WhoWeAreComponent implements OnInit {
       icon: '🌱'
     }
   ];
+
+  visionandmission: VisionAndMission = {
+    vision: 'To be a global leader in digital innovation, empowering businesses and communities through cutting-edge technology solutions.',
+    mission: [
+      'Deliver high-quality digital products that meet the evolving needs of our clients.',
+      'Foster a culture of innovation, collaboration, and continuous learning within our team.',
+      'Promote sustainable practices in all aspects of our business operations.',
+      'Build long-term partnerships with clients based on trust, transparency, and mutual success.'
+    ]
+  };
 
   constructor(private router: Router) {}
 

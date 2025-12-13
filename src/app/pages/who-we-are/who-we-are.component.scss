@@ -454,9 +454,10 @@ body {
 
 /* Timeline Section */
 .timeline-section {
-    background: transparent;
+    background: linear-gradient(180deg, rgba(12, 43, 64, 0.9) 0%, rgba(0, 128, 128, 0.1) 100%);
     color: white;
     padding: 6rem 0;
+    overflow: hidden;
 }
 
 .timeline {
@@ -471,9 +472,20 @@ body {
     left: 50%;
     top: 0;
     bottom: 0;
-    width: 2px;
-    background: #008080;
+    width: 4px;
+    background: linear-gradient(180deg, #008080 0%, #F5771C 50%, #008080 100%);
     transform: translateX(-50%);
+    border-radius: 2px;
+    animation: pulseLine 3s ease-in-out infinite;
+}
+
+@keyframes pulseLine {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(0, 128, 128, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(245, 119, 28, 0.8);
+    }
 }
 
 .timeline-item {
@@ -482,6 +494,17 @@ body {
     width: 50%;
     padding: 0 2rem;
     box-sizing: border-box;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.8s ease-out forwards;
+
+    &:nth-child(odd) {
+        animation-delay: 0.2s;
+    }
+
+    &:nth-child(even) {
+        animation-delay: 0.4s;
+    }
 
     &.left {
         left: 0;
@@ -494,13 +517,34 @@ body {
     }
 }
 
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .timeline-content {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 2rem;
-    border-radius: 15px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+    padding: 2.5rem;
+    border-radius: 20px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    cursor: pointer;
+
+    &:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        border-color: rgba(245, 119, 28, 0.5);
+    }
+
+    &:focus-within {
+        outline: 2px solid #F5771C;
+        outline-offset: 4px;
+    }
 }
 
 .timeline-content::before {
@@ -509,43 +553,53 @@ body {
     top: 50%;
     width: 0;
     height: 0;
-    border: 10px solid transparent;
+    border: 12px solid transparent;
     transform: translateY(-50%);
 
     .left & {
-        right: -10px;
-        border-left-color: rgba(255, 255, 255, 0.1);
+        right: -12px;
+        border-left-color: rgba(255, 255, 255, 0.15);
     }
 
     .right & {
-        left: -10px;
-        border-right-color: rgba(255, 255, 255, 0.1);
+        left: -12px;
+        border-right-color: rgba(255, 255, 255, 0.15);
     }
 }
 
 .timeline-date {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: #F5771C;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .timeline-icon {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+    font-size: 2.5rem;
+    margin-bottom: 1.25rem;
+    display: block;
+    text-align: center;
+    background-clip: text;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .timeline-title {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-weight: 600;
     margin-bottom: 1rem;
     color: white;
+    line-height: 1.3;
 }
 
 .timeline-description {
-    line-height: 1.6;
+    line-height: 1.7;
     color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
 }
+
+
 
 /* Responsive */
 @media (max-width: 1024px) {
@@ -571,15 +625,40 @@ body {
         width: 100%;
         left: 0 !important;
         text-align: center !important;
-        padding: 0;
+        padding: 0 1rem;
+        margin-bottom: 3rem;
 
         .timeline-content::before {
             display: none;
         }
+
+        &:nth-child(odd) .timeline-content {
+            background: linear-gradient(135deg, rgba(245, 119, 28, 0.1) 0%, rgba(0, 128, 128, 0.1) 100%);
+        }
+
+        &:nth-child(even) .timeline-content {
+            background: linear-gradient(135deg, rgba(0, 128, 128, 0.1) 0%, rgba(245, 119, 28, 0.1) 100%);
+        }
     }
 
     .timeline-line {
-        left: 50%;
+        left: 30px;
+        width: 3px;
+        background: linear-gradient(180deg, #008080 0%, #F5771C 100%);
+    }
+
+    .timeline-content {
+        padding: 2rem 1.5rem;
+        border-radius: 15px;
+    }
+
+    .timeline-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .timeline-title {
+        font-size: 1.3rem;
     }
 }
 
@@ -624,9 +703,14 @@ body {
 
     .timeline-content {
         padding: 1.5rem;
+        border-radius: 12px;
     }
 
     .timeline-title {
         font-size: 1.2rem;
+    }
+
+    .timeline-icon {
+        font-size: 1.8rem;
     }
 }

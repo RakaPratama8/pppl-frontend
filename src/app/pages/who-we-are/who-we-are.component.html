@@ -42,4 +42,27 @@
       </div>
     </div>
   </div>
+
+<!-- Vision and Mission Section -->
+<section id="vision-mission" class="vision-mission-section">
+  <div class="full-container">
+    <div class="vision-mission-container">
+      <div class="vision-mission-card">
+        <div class="vision-mission-icon">
+          <i class="fas fa-eye"></i>
+        </div>
+        <h3 class="vision-mission-title">Vision</h3>
+        <p class="vision-mission-description">{{ visionandmission.vision }}</p>
+      </div>
+      <div class="vision-mission-card">
+        <div class="vision-mission-icon">
+          <i class="fas fa-bullseye"></i>
+        </div>
+        <h3 class="vision-mission-title">Mission</h3>
+        <ul class="mission-list">
+          <li *ngFor="let mission of visionandmission.mission">{{ mission }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </section>

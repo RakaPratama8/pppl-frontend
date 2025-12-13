@@ -20,7 +20,10 @@ export const routes: Routes = [
     path: 'build',
     loadComponent: () => import('./pages/client-form/client-form.component').then(m => m.ClientFormComponent)
   },
-  
+  {
+    path: 'who-we-are',
+    loadComponent: () => import('./pages/who-we-are/who-we-are.component').then(m => m.WhoWeAreComponent) 
+  },
   {
     path: 'admin',
     canActivate: [authGuard],
