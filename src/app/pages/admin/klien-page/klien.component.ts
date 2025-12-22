@@ -236,9 +236,9 @@ export class KlienComponent implements OnInit {
     const newStatus = klien.status === StatusKlien.AKTIF ? StatusKlien.BELUM : StatusKlien.AKTIF;
     const statusLabel = newStatus === StatusKlien.AKTIF ? 'Aktifkan' : 'Nonaktifkan';
 
-    this.toast.confirm(
-      `${statusLabel} klien "${klien.namaKlien}"?`,
-      'Tindakan ini tidak dapat dibatalkan'
+    this.toast.helpConfirm(
+      `${statusLabel} klien?`,
+      `<b>"${klien.namaKlien}"</b> akan diubah statusnya menjadi <b>${this.getStatusLabel(newStatus)}</b>.`
     ).then(result => {
       if (!result) return;
 
@@ -261,9 +261,9 @@ export class KlienComponent implements OnInit {
   deleteKlien(klien: KlienDTO) {
     if (!klien.idKlien) return;
 
-    this.toast.confirm(
-      `Hapus klien "${klien.namaKlien}"?`,
-      'Tindakan ini tidak dapat dibatalkan'
+    this.toast.helpConfirm(
+      `Hapus klien?`,
+      `<b>"${klien.namaKlien}"</b> akan dihapus dan tidak dapat dikembalikan.`
     ).then(result => {
       if (!result) return;
 
@@ -289,8 +289,8 @@ export class KlienComponent implements OnInit {
 
   getStatusLabel(status: string): string {
     switch (status) {
-      case 'BELUM': return 'Belum Aktif';
-      case 'AKTIF': return 'Aktif';
+      case 'BELUM': return 'BELUM AKTIF';
+      case 'AKTIF': return 'AKTIF';
       default: return status;
     }
   }
