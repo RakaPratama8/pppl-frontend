@@ -1,0 +1,431 @@
+<div class="rekap-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>REKAP MEETING</h1>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">
+      Tambah Rekap
+    </button>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card clickable" (click)="selectStatus(null)">
+      <div class="stat-info">
+        <span class="stat-label">Total Meeting</span>
+        <span class="stat-value">{{ statistics.total }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card clickable" (click)="selectStatus('MASIH_JALAN')">
+      <div class="stat-info">
+        <span class="stat-label">Masih Jalan</span>
+        <span class="stat-value">{{ statistics.masihJalan }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card clickable" (click)="selectStatus('TIDAK_LAGI_PAKAI_PANJANG_KARAKTER_UNTUK_CATATAN')">
+      <div class="stat-info">
+        <span class="stat-label">Tidak Lagi</span>
+        <span class="stat-value">{{ statistics.tidakLagi }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-section">
+    <button 
+      class="filter-btn"
+      [class.active]="selectedStatus === null"
+      (click)="selectStatus(null)"
+    >
+      Semua Status
+    </button>
+    <button 
+      class="filter-btn"
+      [class.active]="selectedStatus === 'MASIH_JALAN'"
+      (click)="selectStatus('MASIH_JALAN')"
+    >
+      Masih Jalan
+    </button>
+    <button 
+      class="filter-btn"
+      [class.active]="selectedStatus === 'TIDAK_LAGI_PAKAI_PANJANG_KARAKTER_UNTUK_CATATAN'"
+      (click)="selectStatus('TIDAK_LAGI_PAKAI_PANJANG_KARAKTER_UNTUK_CATATAN')"
+    >
+      Tidak Lagi
+    </button>
+  </div>
+
+  <!-- Search Box -->
+  <div class="search-section">
+    <input 
+      type="text" 
+      placeholder="Cari klien atau manager"
+      [(ngModel)]="searchKeyword"
+      (ngModelChange)="onSearchChange()"
+      class="search-input"
+    />
+    <button 
+      class="btn-clear" 
+      (click)="clearFilters()"
+      *ngIf="searchKeyword || selectedStatus"
+    >
+      Clear Filters
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Memuat data...</p>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Klien</th>
+          <th>Manager</th>
+          <th>Layanan</th>
+          <th>Tanggal Meeting</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let rekap of filteredRekap">
+          <td>
+            <strong>{{ rekap.namaKlien }}</strong>
+          </td>
+          <td>{{ rekap.namaManager }}</td>
+          <td>{{ rekap.namaLayanan }}</td>
+          <td>{{ formatDate(rekap.tglMeeting) }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(rekap.status)">
+              {{ getStatusLabel(rekap.status) }}
+            </span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button 
+                class="btn-icon" 
+                (click)="openDetailModal(rekap)"
+                title="Detail"
+              >
+                Detail
+              </button>
+              <button 
+                class="btn-icon" 
+                (click)="openEditModal(rekap)"
+                title="Edit"
+              >
+                Edit
+              </button>
+              <button 
+                class="btn-icon btn-delete" 
+                (click)="deleteRekap(rekap)"
+                title="Hapus"
+              >
+                Hapus
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredRekap.length === 0">
+          <td colspan="6" class="empty-state">
+            <div class="empty-illustration"></div>
+            <p>Tidak ada rekap meeting yang sesuai filter</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Edit Rekap Meeting' : 'Tambah rekap meeting' }}</h2>
+      <button class="close-btn" (click)="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form (ngSubmit)="submitForm()">
+        <div class="form-row">
+          <!-- Klien Custom Dropdown -->
+          <div class="form-group">
+            <label>
+              Klien <span class="required">*</span>
+            </label>
+            <div class="custom-dropdown" (click)="$event.stopPropagation()">
+              <div 
+                class="custom-dropdown-trigger"
+                [class.active]="dropdownStates['klien']"
+                (click)="toggleDropdown('klien', $event)"
+              >
+                <span class="custom-dropdown-label">{{ getSelectedLabel('klien') }}</span>
+                <span class="custom-dropdown-arrow" [class.rotated]="dropdownStates['klien']">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M6 9L1 4h10z" fill="currentColor"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="custom-dropdown-menu" [class.show]="dropdownStates['klien']">
+                <div 
+                  class="custom-dropdown-item"
+                  *ngFor="let klien of klienList"
+                  [class.selected]="formData.idKlien === klien.idKlien"
+                  (click)="selectDropdownItem('klien', klien.idKlien)"
+                >
+                  {{ klien.namaKlien }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Manager Custom Dropdown -->
+          <div class="form-group">
+            <label>
+              Manager <span class="required">*</span>
+            </label>
+            <div class="custom-dropdown" (click)="$event.stopPropagation()">
+              <div 
+                class="custom-dropdown-trigger"
+                [class.active]="dropdownStates['manager']"
+                (click)="toggleDropdown('manager', $event)"
+              >
+                <span class="custom-dropdown-label">{{ getSelectedLabel('manager') }}</span>
+                <span class="custom-dropdown-arrow" [class.rotated]="dropdownStates['manager']">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M6 9L1 4h10z" fill="currentColor"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="custom-dropdown-menu" [class.show]="dropdownStates['manager']">
+                <div 
+                  class="custom-dropdown-item"
+                  *ngFor="let manager of managerList"
+                  [class.selected]="formData.idManager === manager.idManager"
+                  (click)="selectDropdownItem('manager', manager.idManager)"
+                >
+                  {{ manager.namaManager }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- Layanan Custom Dropdown -->
+          <div class="form-group">
+            <label>
+              Layanan <span class="required">*</span>
+            </label>
+            <div class="custom-dropdown" (click)="$event.stopPropagation()">
+              <div 
+                class="custom-dropdown-trigger"
+                [class.active]="dropdownStates['layanan']"
+                (click)="toggleDropdown('layanan', $event)"
+              >
+                <span class="custom-dropdown-label">{{ getSelectedLabel('layanan') }}</span>
+                <span class="custom-dropdown-arrow" [class.rotated]="dropdownStates['layanan']">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M6 9L1 4h10z" fill="currentColor"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="custom-dropdown-menu" [class.show]="dropdownStates['layanan']">
+                <div 
+                  class="custom-dropdown-item"
+                  *ngFor="let layanan of layananList"
+                  [class.selected]="formData.idLayanan === layanan.idLayanan"
+                  (click)="selectDropdownItem('layanan', layanan.idLayanan)"
+                >
+                  {{ layanan.namaLayanan }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tanggal Meeting -->
+          <div class="form-group">
+            <label for="tglMeeting">
+              Tanggal Meeting <span class="required">*</span>
+            </label>
+            <input 
+              type="date"
+              id="tglMeeting"
+              [(ngModel)]="formData.tglMeeting"
+              name="tglMeeting"
+              class="form-control"
+              required
+            />
+          </div>
+        </div>
+
+        <!-- Status Custom Dropdown -->
+        <div class="form-group">
+          <label>
+            Status <span class="required">*</span>
+          </label>
+          <div class="custom-dropdown" (click)="$event.stopPropagation()">
+            <div 
+              class="custom-dropdown-trigger"
+              [class.active]="dropdownStates['status']"
+              (click)="toggleDropdown('status', $event)"
+            >
+              <span class="custom-dropdown-label">{{ getSelectedLabel('status') }}</span>
+              <span class="custom-dropdown-arrow" [class.rotated]="dropdownStates['status']">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M6 9L1 4h10z" fill="currentColor"/>
+                </svg>
+              </span>
+            </div>
+            <div class="custom-dropdown-menu" [class.show]="dropdownStates['status']">
+              <div 
+                class="custom-dropdown-item"
+                [class.selected]="formData.status === 'MASIH_JALAN'"
+                (click)="selectDropdownItem('status', 'MASIH_JALAN')"
+              >
+                Masih Jalan
+              </div>
+              <div 
+                class="custom-dropdown-item"
+                [class.selected]="formData.status === 'TIDAK_LAGI_PAKAI_PANJANG_KARAKTER_UNTUK_CATATAN'"
+                (click)="selectDropdownItem('status', 'TIDAK_LAGI_PAKAI_PANJANG_KARAKTER_UNTUK_CATATAN')"
+              >
+                Tidak Lagi
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hasil Meeting -->
+        <div class="form-group">
+          <label for="hasil">
+            Hasil Meeting
+          </label>
+          <textarea 
+            id="hasil"
+            [(ngModel)]="formData.hasil"
+            name="hasil"
+            class="form-control"
+            rows="4"
+            placeholder="Hasil dari meeting (opsional)"
+          ></textarea>
+        </div>
+
+        <!-- Catatan -->
+        <div class="form-group">
+          <label for="catatan">
+            Catatan
+          </label>
+          <textarea 
+            id="catatan"
+            [(ngModel)]="formData.catatan"
+            name="catatan"
+            class="form-control"
+            rows="4"
+            placeholder="Catatan tambahan (opsional)"
+          ></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button 
+            type="button" 
+            class="btn-secondary" 
+            (click)="closeModal()"
+            [disabled]="processing"
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            class="btn-primary"
+            [disabled]="processing || !isFormValid()"
+          >
+            <span *ngIf="!processing">{{ isEditMode ? 'Update' : 'Simpan' }}</span>
+            <span *ngIf="processing">Processing...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" *ngIf="showDetailModal" (click)="closeDetailModal()">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()" *ngIf="selectedRekap">
+    <div class="modal-header">
+      <h2>Detail Rekap Meeting</h2>
+      <button class="close-btn" (click)="closeDetailModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Status Badge -->
+      <div class="detail-status">
+        <span class="status-badge large" [ngClass]="getStatusClass(selectedRekap.status)">
+          {{ getStatusLabel(selectedRekap.status) }}
+        </span>
+      </div>
+
+      <!-- Meeting Info -->
+      <div class="detail-section">
+        <h3>Informasi Meeting</h3>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <label>Klien:</label>
+            <span>{{ selectedRekap.namaKlien }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Manager:</label>
+            <span>{{ selectedRekap.namaManager }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Layanan:</label>
+            <span>{{ selectedRekap.namaLayanan }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Tanggal Meeting:</label>
+            <span>{{ formatDate(selectedRekap.tglMeeting) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hasil & Catatan -->
+      <div class="detail-section" *ngIf="selectedRekap.hasil">
+        <h3>Hasil Meeting</h3>
+        <div class="result-box">
+          <p>{{ selectedRekap.hasil }}</p>
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedRekap.catatan">
+        <h3>Catatan</h3>
+        <div class="result-box">
+          <p>{{ selectedRekap.catatan }}</p>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button 
+          class="btn-secondary" 
+          (click)="closeDetailModal()"
+        >
+          Tutup
+        </button>
+        <button 
+          class="btn-primary" 
+          (click)="openEditModal(selectedRekap); closeDetailModal()"
+        >
+          Edit Rekap
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
