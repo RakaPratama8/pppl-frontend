@@ -1,0 +1,241 @@
+<div class="karyawan-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>KARYAWAN</h1>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">
+      Tambah Karyawan
+    </button>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-info">
+        <span class="stat-label">Total Karyawan</span>
+        <span class="stat-value">{{ statistics.total }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-section">
+    <button 
+      class="filter-btn"
+      [class.active]="selectedManager === null"
+      (click)="selectManager(null)"
+    >
+      Semua Manager
+    </button>
+    <button 
+      *ngFor="let manager of managers"
+      class="filter-btn"
+      [class.active]="selectedManager === manager.idManager"
+      (click)="selectManager(manager.idManager!)"
+    >
+      {{ manager.namaManager }}
+    </button>
+  </div>
+
+  <!-- Search Box -->
+  <div class="search-section">
+    <input 
+      type="text" 
+      placeholder="Cari karyawan"
+      [(ngModel)]="searchKeyword"
+      (ngModelChange)="onSearchChange()"
+      class="search-input"
+    />
+    <button 
+      class="btn-clear" 
+      (click)="clearFilters()"
+      *ngIf="searchKeyword || selectedManager"
+    >
+      Clear Filters
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Memuat data...</p>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nama Karyawan</th>
+          <th>Email</th>
+          <th>No. Telepon</th>
+          <th>Jabatan/Posisi</th>
+          <th>Manager</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let karyawan of filteredKaryawan">
+          <td>
+            <strong>{{ karyawan.namaKaryawan }}</strong>
+          </td>
+          <td>{{ karyawan.emailKaryawan }}</td>
+          <td>{{ karyawan.noTelp }}</td>
+          <td>{{ karyawan.jabatanPosisi }}</td>
+          <td>
+            <span class="badge-manager">{{ karyawan.namaManager }}</span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button 
+                class="btn-icon" 
+                (click)="openEditModal(karyawan)"
+                title="Edit"
+              >
+                Edit
+              </button>
+              <button 
+                class="btn-icon btn-delete" 
+                (click)="deleteKaryawan(karyawan)"
+                title="Hapus"
+              >
+                Hapus
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredKaryawan.length === 0">
+          <td colspan="6" class="empty-state">
+            <div class="empty-illustration"></div>
+            <p>Tidak ada karyawan yang sesuai filter</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Edit Karyawan' : 'Tambah Karyawan' }}</h2>
+      <button class="close-btn" (click)="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form (ngSubmit)="submitForm()">
+        <div class="form-group">
+          <label for="namaKaryawan">
+            Nama Karyawan <span class="required">*</span>
+          </label>
+          <input 
+            type="text"
+            id="namaKaryawan"
+            [(ngModel)]="formData.namaKaryawan"
+            name="namaKaryawan"
+            class="form-control"
+            placeholder="Masukkan nama karyawan"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="emailKaryawan">
+            Email <span class="required">*</span>
+          </label>
+          <input 
+            type="email"
+            id="emailKaryawan"
+            [(ngModel)]="formData.emailKaryawan"
+            name="emailKaryawan"
+            class="form-control"
+            placeholder="email@example.com"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="noTelp">
+            No. Telepon <span class="required">*</span>
+          </label>
+          <input 
+            type="tel"
+            id="noTelp"
+            [(ngModel)]="formData.noTelp"
+            name="noTelp"
+            class="form-control"
+            placeholder="08xxxxxxxxxx"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="jabatanPosisi">
+            Jabatan/Posisi <span class="required">*</span>
+          </label>
+          <input 
+            type="text"
+            id="jabatanPosisi"
+            [(ngModel)]="formData.jabatanPosisi"
+            name="jabatanPosisi"
+            class="form-control"
+            placeholder="Contoh: Software Engineer"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>
+            Manager <span class="required">*</span>
+          </label>
+          <div class="custom-dropdown" (click)="$event.stopPropagation()">
+            <div 
+              class="custom-dropdown-trigger"
+              [class.active]="dropdownStates['manager']"
+              (click)="toggleDropdown('manager', $event)"
+            >
+              <span class="custom-dropdown-label">{{ getSelectedLabel('manager') }}</span>
+              <span class="custom-dropdown-arrow" [class.rotated]="dropdownStates['manager']">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M6 9L1 4h10z" fill="currentColor"/>
+                </svg>
+              </span>
+            </div>
+            <div class="custom-dropdown-menu" [class.show]="dropdownStates['manager']">
+              <div 
+                class="custom-dropdown-item"
+                *ngFor="let manager of managers"
+                [class.selected]="formData.idManager === manager.idManager"
+                (click)="selectDropdownItem('manager', manager.idManager)"
+              >
+                {{ manager.namaManager }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button 
+            type="button" 
+            class="btn-secondary" 
+            (click)="closeModal()"
+            [disabled]="processing"
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            class="btn-primary"
+            [disabled]="processing || !isFormValid()"
+          >
+            <span *ngIf="!processing">{{ isEditMode ? 'Update' : 'Simpan' }}</span>
+            <span *ngIf="processing">Processing...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
