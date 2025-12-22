@@ -1,0 +1,271 @@
+<div class="manager-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>MANAGER</h1>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()" [disabled]="loading">
+      <span>Tambah Manager</span>
+    </button>
+  </div>
+
+  <!-- Statistics -->
+  <div class="stats-row">
+    <div class="stat-item">
+      <span class="stat-label">Total Manager</span>
+      <span class="stat-value">{{ managers.length }}</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Hasil Filter</span>
+      <span class="stat-value">{{ filteredManagers.length }}</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Total Divisi</span>
+      <span class="stat-value">{{ divisiList.length }}</span>
+    </div>
+  </div>
+
+    <!-- Search bar & Filters -->
+  <div class="filter-section">
+      <input 
+        type="text" 
+        placeholder="Cari nama, email, atau divisi"
+        [(ngModel)]="searchKeyword"
+        (ngModelChange)="onSearchChange()"
+        class="search-input"
+      />
+
+      <button 
+        class="btn-secondary" 
+        (click)="clearFilters()"
+        *ngIf="searchKeyword || selectedDivisi"
+      >
+        Clear Filters
+      </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Memuat data...</p>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nama Manager</th>
+          <th>Email</th>
+          <th>No. Telepon</th>
+          <th>Divisi</th>
+          <th>Tanggal Mulai</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let manager of filteredManagers">
+          <td>
+            <div class="manager-name">
+              <strong>{{ manager.namaManager }}</strong>
+            </div>
+          </td>
+          <td>{{ manager.emailManager }}</td>
+          <td>{{ manager.noTelp }}</td>
+          <td>
+            <span class="badge badge-divisi">{{ manager.divisi }}</span>
+          </td>
+          <td>{{ formatDate(manager.tglMulai) }}</td>
+          <td>
+            <div class="action-buttons">
+              <button 
+                class="btn-icon btn-view" 
+                (click)="openViewModal(manager)"
+                title="Lihat Detail"
+              >
+                Detail
+              </button>
+              <button 
+                class="btn-icon btn-edit" 
+                (click)="openEditModal(manager)"
+                title="Edit"
+              >
+                Edit
+              </button>
+              <button 
+                class="btn-icon btn-delete" 
+                (click)="deleteManager(manager)"
+                title="Hapus"
+              >
+                Hapus
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredManagers.length === 0">
+          <td colspan="6" class="empty-state">
+            <div class="empty-illustration"></div>
+            <p>Tidak ada data manager yang sesuai filter</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ getModalTitle() }}</h2>
+      <button class="close-btn" (click)="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form (ngSubmit)="onSubmit()">
+        <!-- Nama Manager -->
+        <div class="form-group">
+          <label for="namaManager">
+            Nama Manager <span class="required">*</span>
+          </label>
+          <input 
+            type="text"
+            id="namaManager"
+            [(ngModel)]="formData.namaManager"
+            name="namaManager"
+            class="form-control"
+            [class.error]="formErrors.namaManager"
+            [disabled]="modalMode === 'view'"
+            placeholder="Masukkan nama manager"
+          />
+          <span *ngIf="formErrors.namaManager" class="error-message">
+            {{ formErrors.namaManager }}
+          </span>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="emailManager">
+            Email <span class="required">*</span>
+          </label>
+          <input 
+            type="email"
+            id="emailManager"
+            [(ngModel)]="formData.emailManager"
+            name="emailManager"
+            class="form-control"
+            [class.error]="formErrors.emailManager"
+            [disabled]="modalMode === 'view'"
+            placeholder="manager@pandigi.com"
+          />
+          <span *ngIf="formErrors.emailManager" class="error-message">
+            {{ formErrors.emailManager }}
+          </span>
+        </div>
+
+        <!-- No Telepon -->
+        <div class="form-group">
+          <label for="noTelp">
+            No. Telepon <span class="required">*</span>
+          </label>
+          <input 
+            type="tel"
+            id="noTelp"
+            [(ngModel)]="formData.noTelp"
+            name="noTelp"
+            class="form-control"
+            [class.error]="formErrors.noTelp"
+            [disabled]="modalMode === 'view'"
+            placeholder="081234567890"
+          />
+          <span *ngIf="formErrors.noTelp" class="error-message">
+            {{ formErrors.noTelp }}
+          </span>
+        </div>
+
+        <!-- Divisi -->
+        <div class="form-group">
+          <label for="divisi">
+            Divisi <span class="required">*</span>
+          </label>
+          <input 
+            type="text"
+            id="divisi"
+            [(ngModel)]="formData.divisi"
+            name="divisi"
+            class="form-control"
+            [class.error]="formErrors.divisi"
+            [disabled]="modalMode === 'view'"
+            placeholder="e.g., IT, Marketing, Finance"
+            list="divisiSuggestions"
+          />
+          <datalist id="divisiSuggestions">
+            <option *ngFor="let divisi of divisiList" [value]="divisi"></option>
+          </datalist>
+          <span *ngIf="formErrors.divisi" class="error-message">
+            {{ formErrors.divisi }}
+          </span>
+        </div>
+
+        <!-- Tanggal Mulai -->
+        <div class="form-group">
+          <label for="tglMulai">
+            Tanggal Mulai <span class="required">*</span>
+          </label>
+          <input 
+            type="date"
+            id="tglMulai"
+            [(ngModel)]="formData.tglMulai"
+            name="tglMulai"
+            class="form-control"
+            [class.error]="formErrors.tglMulai"
+            [disabled]="modalMode === 'view'"
+          />
+          <span *ngIf="formErrors.tglMulai" class="error-message">
+            {{ formErrors.tglMulai }}
+          </span>
+        </div>
+
+        <!-- Actions -->
+        <div class="modal-actions" *ngIf="modalMode !== 'view'">
+          <button 
+            type="button" 
+            class="btn-secondary" 
+            (click)="closeModal()"
+            [disabled]="loading"
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            class="btn-primary"
+            [disabled]="loading"
+          >
+            <span *ngIf="!loading">
+              {{ modalMode === 'create' ? 'Simpan' : 'Update' }}
+            </span>
+            <span *ngIf="loading">Menyimpan...</span>
+          </button>
+        </div>
+
+        <div class="modal-actions" *ngIf="modalMode === 'view'">
+          <button 
+            type="button" 
+            class="btn-secondary" 
+            (click)="closeModal()"
+          >
+            Tutup
+          </button>
+          <button 
+            type="button" 
+            class="btn-primary" 
+            (click)="openEditModal(formData)"
+          >
+            Edit Manager
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
