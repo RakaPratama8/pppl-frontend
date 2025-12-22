@@ -1,0 +1,258 @@
+<div class="klien-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>KLIEN</h1>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">
+      Tambah Klien
+    </button>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card clickable" (click)="selectStatus(null)">
+      <div class="stat-info">
+        <span class="stat-label">Total Klien</span>
+        <span class="stat-value">{{ statistics.total }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card clickable" (click)="selectStatus('BELUM')">
+      <div class="stat-info">
+        <span class="stat-label">Belum Aktif</span>
+        <span class="stat-value">{{ statistics.belum }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card clickable" (click)="selectStatus('AKTIF')">
+      <div class="stat-info">
+        <span class="stat-label">Aktif</span>
+        <span class="stat-value">{{ statistics.aktif }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-section">
+    <button 
+      class="filter-btn"
+      [class.active]="selectedStatus === null"
+      (click)="selectStatus(null)"
+    >
+      Semua
+    </button>
+    <button 
+      class="filter-btn"
+      [class.active]="selectedStatus === 'BELUM'"
+      (click)="selectStatus('BELUM')"
+    >
+      Belum Aktif
+    </button>
+    <button 
+      class="filter-btn"
+      [class.active]="selectedStatus === 'AKTIF'"
+      (click)="selectStatus('AKTIF')"
+    >
+      Aktif
+    </button>
+  </div>
+
+  <!-- Search Box -->
+  <div class="search-section">
+    <input 
+      type="text" 
+      placeholder="Cari klien"
+      [(ngModel)]="searchKeyword"
+      (ngModelChange)="onSearchChange()"
+      class="search-input"
+    />
+    <button 
+      class="btn-clear" 
+      (click)="clearFilters()"
+      *ngIf="searchKeyword || selectedStatus"
+    >
+      Clear Filters
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Memuat data...</p>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nama Klien</th>
+          <th>Email</th>
+          <th>No. Telepon</th>
+          <th>Status</th>
+          <th>Tanggal Request</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let klien of filteredKlien">
+          <td>
+            <strong>{{ klien.namaKlien }}</strong>
+          </td>
+          <td>{{ klien.emailKlien }}</td>
+          <td>{{ klien.noTelp }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(klien.status)">
+              {{ getStatusLabel(klien.status) }}
+            </span>
+          </td>
+          <td>{{ formatDate(klien.tglRequest) }}</td>
+          <td>
+            <div class="action-buttons">
+              <button 
+                class="btn-icon" 
+                (click)="openEditModal(klien)"
+              >
+                Edit
+              </button>
+              <button 
+                class="btn-icon btn-status" 
+                (click)="toggleStatus(klien)"
+              >
+                {{ klien.status === 'AKTIF' ? 'Nonaktifkan' : 'Aktifkan' }}
+              </button>
+              <button 
+                class="btn-icon btn-delete" 
+                (click)="deleteKlien(klien)"
+              >
+                Hapus
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredKlien.length === 0">
+          <td colspan="6" class="empty-state">
+            <div class="empty-illustration"></div>
+            <p>Tidak ada klien yang sesuai filter</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Edit Klien' : 'Tambah Klien' }}</h2>
+      <button class="close-btn" (click)="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form (ngSubmit)="submitForm()">
+        <div class="form-group">
+          <label for="namaKlien">
+            Nama Klien <span class="required">*</span>
+          </label>
+          <input 
+            type="text"
+            id="namaKlien"
+            [(ngModel)]="formData.namaKlien"
+            name="namaKlien"
+            class="form-control"
+            placeholder="Masukkan nama klien"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="emailKlien">
+            Email <span class="required">*</span>
+          </label>
+          <input 
+            type="email"
+            id="emailKlien"
+            [(ngModel)]="formData.emailKlien"
+            name="emailKlien"
+            class="form-control"
+            placeholder="email@example.com"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="noTelp">
+            No. Telepon <span class="required">*</span>
+          </label>
+          <input 
+            type="tel"
+            id="noTelp"
+            [(ngModel)]="formData.noTelp"
+            name="noTelp"
+            class="form-control"
+            placeholder="08xxxxxxxxxx"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>
+            Status <span class="required">*</span>
+          </label>
+          <div class="custom-dropdown" (click)="$event.stopPropagation()">
+            <div 
+              class="custom-dropdown-trigger"
+              [class.active]="dropdownStates['status']"
+              (click)="toggleDropdown('status', $event)"
+            >
+              <span class="custom-dropdown-label">{{ getSelectedLabel('status') }}</span>
+              <span class="custom-dropdown-arrow" [class.rotated]="dropdownStates['status']">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M6 9L1 4h10z" fill="currentColor"/>
+                </svg>
+              </span>
+            </div>
+            <div class="custom-dropdown-menu" [class.show]="dropdownStates['status']">
+              <div 
+                class="custom-dropdown-item"
+                [class.selected]="formData.status === 'BELUM'"
+                (click)="selectDropdownItem('status', 'BELUM')"
+              >
+                Belum Aktif
+              </div>
+              <div 
+                class="custom-dropdown-item"
+                [class.selected]="formData.status === 'AKTIF'"
+                (click)="selectDropdownItem('status', 'AKTIF')"
+              >
+                Aktif
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button 
+            type="button" 
+            class="btn-secondary" 
+            (click)="closeModal()"
+            [disabled]="processing"
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            class="btn-primary"
+            [disabled]="processing || !isFormValid()"
+          >
+            <span *ngIf="!processing">{{ isEditMode ? 'Update' : 'Simpan' }}</span>
+            <span *ngIf="processing">Processing...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
