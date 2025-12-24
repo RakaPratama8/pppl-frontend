@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { NgZone } from '@angular/core';
 
 export interface NotificationDTO {
   idNotification?: number;
@@ -35,7 +36,10 @@ export class BellService implements OnDestroy {
 
   notifications$ = this.notificationsSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private ngZone: NgZone
+  ) {
     this.loadInitialNotifications();
     this.initWebSocket();
   }
@@ -58,25 +62,27 @@ export class BellService implements OnDestroy {
    */
   private initWebSocket(): void {
     this.stompClient = new Client({
-      webSocketFactory: () => new SockJS(this.wsUrl),
+      webSocketFactory: () => new SockJS('http://localhost:8083/ws'),
       reconnectDelay: 5000,
-      debug: () => {}
+      debug: (msg) => console.log('[STOMP]', msg)
     });
 
     this.stompClient.onConnect = () => {
-      this.stompClient.subscribe('/topic/notifications', (msg: IMessage) => {
-        const notif: NotificationDTO = JSON.parse(msg.body);
+      console.log('STOMP CONNECTED');
 
-        const current = this.notificationsSubject.value;
+      this.stompClient.subscribe('/topic/admin/notifications', (msg: IMessage) => {
+        console.log('WS MESSAGE RECEIVED:', msg.body);
 
-        // prepend + limit
-        this.notificationsSubject.next([
-          notif,
-          ...current.filter(n => n.idNotification !== notif.idNotification)
-        ].slice(0, 10));
+        this.ngZone.run(() => {
+          const notif: NotificationDTO = JSON.parse(msg.body);
+          console.log('PARSED NOTIF:', notif);
+
+          const current = this.notificationsSubject.value;
+          this.notificationsSubject.next([notif, ...current]);
+        });
       });
     };
-
+        
     this.stompClient.activate();
   }
 
