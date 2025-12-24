@@ -64,7 +64,7 @@ export class BellComponent implements OnDestroy {
       case 'NEW_CLIENT': return '';
       case 'PENDING_VERIFICATION': return '';
       case 'MEETING_REMINDER': return '';
-      default: return '🔔';
+      default: return '';
     }
   }
 
