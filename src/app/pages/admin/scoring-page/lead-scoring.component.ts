@@ -1,16 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { LeadScoringService, LeadAnalysisDTO, LeadStatistics } from '../../../service/lead-scoring.service';
 import { ToastService } from '../../../service/toast.service';
+import { LoadingOverlayComponent } from '../../animation/loading-overlay/loading-overlay.component';
+import { CanComponentDeactivate } from '../../../guard/analysis.guard';
 
 @Component({
   selector: 'app-lead-scoring',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LoadingOverlayComponent],
   templateUrl: './lead-scoring.component.html',
   styleUrls: ['./lead-scoring.component.scss']
 })
-export class LeadScoringComponent implements OnInit {
+export class LeadScoringComponent implements OnInit, CanComponentDeactivate {
   loading = false;
   analyzing = false;
   leads: LeadAnalysisDTO[] = [];
@@ -28,14 +31,30 @@ export class LeadScoringComponent implements OnInit {
   showDetailModal = false;
   analyzingLeads = new Set<number>();
 
+  // Loading Overlay State
+  showLoadingOverlay = false;
+  loadingTitle = '';
+  loadingMessage = '';
+  showProgress = false;
+  progress = 0;
+
   constructor(
     private leadScoringService: LeadScoringService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private router: Router
   ) {}
 
   ngOnInit() {
     this.loadStatistics();
     this.loadLeadResults();
+  }
+
+  // Prevent navigation saat sedang analisa
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification($event: any): void {
+    if (this.analyzing) {
+      $event.returnValue = 'Proses analisa sedang berjalan. Yakin ingin meninggalkan halaman?';
+    }
   }
 
   loadStatistics() {
@@ -71,42 +90,59 @@ export class LeadScoringComponent implements OnInit {
   }
 
   /**
-   * Analisa single lead dengan konfirmasi Toast
+   * Analisa single lead dengan full screen blocking spinner
    */
   async analyzeLead(idRequest: number) {
     const lead = this.leads.find(l => l.idRequest === idRequest);
     const leadInfo = lead ? `${lead.namaKlien} (${lead.layanan})` : `#${idRequest}`;
     
-    // Konfirmasi dengan toast-style
     const confirmed = await this.toastService.helpConfirm(
       'Analisa lead ini dengan AI?',
       `${leadInfo}\n`
     );
 
     if (confirmed) {
+      // SHOW FULL SCREEN LOADING
+      this.showLoadingOverlay = true;
+      this.loadingTitle = 'AI Sedang Menganalisa';
+      this.loadingMessage = `Menganalisa lead: <strong>${leadInfo}</strong><br><small>Estimasi: ~10-15 detik</small>`;
+      this.showProgress = true;
+      this.progress = 0;
+
       this.analyzingLeads.add(idRequest);
       this.analyzing = true;
+
+      // Simulate progress (karena backend tidak ada progress tracking)
+      const progressInterval = this.simulateProgress();
       
       this.leadScoringService.analyzeLeadById(idRequest).subscribe({
         next: (response) => {
-          if (response.success && response.data) {
-            const data = response.data;
-            
-            // Show success toast dengan detail
-            this.toastService.success(
-              'Lead Berhasil Dianalisa!',
-              `<strong>${data.skorPrioritas}</strong> - ${data.kategori}<br>` +
-              `<small>Confidence: ${data.confidence}%</small><br>`
-            );
-            
-            // Reload data
-            this.loadLeadResults();
-            this.loadStatistics();
-          }
-          this.analyzingLeads.delete(idRequest);
-          this.analyzing = false;
+          clearInterval(progressInterval);
+          this.progress = 100;
+
+          setTimeout(() => {
+            if (response.success && response.data) {
+              const data = response.data;
+              
+              this.toastService.success(
+                'Lead Berhasil Dianalisa!',
+                `<strong>${data.skorPrioritas}</strong> - ${data.kategori}<br>` +
+                `<small>Confidence: ${data.confidence}%</small>`
+              );
+              
+              this.loadLeadResults();
+              this.loadStatistics();
+            }
+
+            // Hide overlay
+            this.showLoadingOverlay = false;
+            this.analyzingLeads.delete(idRequest);
+            this.analyzing = false;
+          }, 500);
         },
         error: (error) => {
+          clearInterval(progressInterval);
+          this.showLoadingOverlay = false;
           this.analyzingLeads.delete(idRequest);
           this.analyzing = false;
           this.handleAnalysisError(error);
@@ -116,7 +152,7 @@ export class LeadScoringComponent implements OnInit {
   }
 
   /**
-   * Analisa semua lead yang belum dianalisa
+   * Analisa semua lead dengan full screen blocking spinner
    */
   async analyzeAll() {
     const unanalyzed = this.leads.filter(l => !l.aiAnalyzed);
@@ -139,32 +175,76 @@ export class LeadScoringComponent implements OnInit {
     );
 
     if (confirmed) {
+      // SHOW FULL SCREEN LOADING
+      this.showLoadingOverlay = true;
+      this.loadingTitle = 'Batch Analysis Running';
+      this.loadingMessage = `Menganalisa <strong>${unanalyzed.length} leads</strong><br>` +
+                            `<small>Estimasi: ~${estimatedTime} menit</small><br>` +
+                            `<small>Rate limit: 15 requests per 1 menit</small>`;
+      this.showProgress = true;
+      this.progress = 0;
       this.analyzing = true;
-      
-      // Show processing toast
-      this.toastService.help(
-        'Memproses Batch Analysis...',
-        `Menganalisa ${unanalyzed.length} leads. Mohon tunggu...`
-      );
+
+      // Simulate progress untuk batch
+      const progressInterval = this.simulateBatchProgress(estimatedTime * 60);
       
       this.leadScoringService.analyzeAllPendingLeads().subscribe({
         next: (response) => {
-          if (response.success) {
-            this.toastService.success(
-              'Batch Analysis Selesai!',
-              response.message || `Berhasil menganalisa ${unanalyzed.length} leads`
-            );
-            this.loadLeadResults();
-            this.loadStatistics();
-          }
-          this.analyzing = false;
+          clearInterval(progressInterval);
+          this.progress = 100;
+
+          setTimeout(() => {
+            if (response.success) {
+              this.toastService.success(
+                'Batch Analysis Selesai!',
+                response.message || `Berhasil menganalisa ${unanalyzed.length} leads`
+              );
+              this.loadLeadResults();
+              this.loadStatistics();
+            }
+
+            this.showLoadingOverlay = false;
+            this.analyzing = false;
+          }, 500);
         },
         error: (error) => {
+          clearInterval(progressInterval);
+          this.showLoadingOverlay = false;
           this.analyzing = false;
           this.handleAnalysisError(error);
         }
       });
     }
+  }
+
+  /**
+   * Simulate progress untuk single analysis (10-15 detik)
+   */
+  private simulateProgress(): any {
+    const duration = 12000; // 12 detik
+    const interval = 100;
+    const steps = duration / interval;
+    let currentStep = 0;
+
+    return setInterval(() => {
+      currentStep++;
+      this.progress = Math.min(95, (currentStep / steps) * 100);
+    }, interval);
+  }
+
+  /**
+   * Simulate progress untuk batch analysis
+   */
+  private simulateBatchProgress(durationSeconds: number): any {
+    const duration = durationSeconds * 1000;
+    const interval = 200;
+    const steps = duration / interval;
+    let currentStep = 0;
+
+    return setInterval(() => {
+      currentStep++;
+      this.progress = Math.min(95, (currentStep / steps) * 100);
+    }, interval);
   }
 
   /**
@@ -190,33 +270,28 @@ export class LeadScoringComponent implements OnInit {
     }
   }
 
-  /**
-   * Get priority CSS class
-   */
   getPriorityClass(priority: string | null): string {
     if (!priority) return 'priority-none';
     return `priority-${priority.toLowerCase()}`;
   }
 
-  /**
-   * Show lead detail modal
-   */
   showDetail(lead: LeadAnalysisDTO) {
+    if (this.analyzing) {
+      this.toastService.warning(
+        'Proses Analisa Berjalan',
+        'Tunggu hingga analisa selesai sebelum membuka detail'
+      );
+      return;
+    }
     this.selectedLead = lead;
     this.showDetailModal = true;
   }
 
-  /**
-   * Close modal
-   */
   closeModal() {
     this.showDetailModal = false;
     this.selectedLead = null;
   }
 
-  /**
-   * Format date
-   */
   formatDate(date: Date | null | undefined): string {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('id-ID', {
@@ -228,24 +303,15 @@ export class LeadScoringComponent implements OnInit {
     });
   }
 
-  /**
-   * Check if lead sedang dianalisa
-   */
   isAnalyzing(idRequest: number): boolean {
     return this.analyzingLeads.has(idRequest);
   }
 
-  // ========== ERROR HANDLING ==========
-
-  /**
-   * Handle analysis error dengan Toast
-   */
   private handleAnalysisError(error: any) {
     console.error('Analysis error:', error);
     
     const errorMessage = error.error?.message || error.message || 'Terjadi kesalahan saat menganalisa';
     
-    // Handle rate limit error
     if (errorMessage.includes('Rate limit')) {
       const retryAfter = this.extractRetryAfter(errorMessage);
       this.toastService.warning(
@@ -270,19 +336,32 @@ export class LeadScoringComponent implements OnInit {
     }
   }
 
-  /**
-   * Extract retry after seconds
-   */
   private extractRetryAfter(message: string): string {
     const match = message.match(/(\d+)\s*detik/);
     return match ? match[1] : 'beberapa';
   }
 
-  /**
-   * Refresh data
-   */
   refreshData() {
+    if (this.analyzing) {
+      this.toastService.warning(
+        'Proses Analisa Berjalan',
+        'Tidak dapat refresh saat analisa sedang berjalan'
+      );
+      return;
+    }
     this.loadStatistics();
     this.loadLeadResults();
+  }
+
+  // Implement CanDeactivate - Prevent navigation saat analyzing
+  canDeactivate(): boolean {
+    if (this.analyzing) {
+      return confirm(
+        'Proses analisa AI sedang berjalan!\n\n' +
+        'Meninggalkan halaman akan menghentikan proses analisa.\n' +
+        'Yakin ingin meninggalkan halaman ini?'
+      );
+    }
+    return true;
   }
 }
