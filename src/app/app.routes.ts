@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guard/auth.guard';
+import { AnalysisGuard } from './guard/analysis.guard';
 
 import { LandingComponent } from './pages/landing/landing.component';
 import { LoginComponent } from './pages/client/login/login.component';
@@ -48,7 +49,8 @@ export const routes: Routes = [
       {
         path: 'lead-scoring',
         loadComponent: () => import('./pages/admin/scoring-page/lead-scoring.component')
-          .then(m => m.LeadScoringComponent)
+          .then(m => m.LeadScoringComponent),
+        canDeactivate: [AnalysisGuard]
       },
       {
         path: 'karyawan',
