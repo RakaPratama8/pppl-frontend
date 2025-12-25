@@ -1,4 +1,13 @@
 <div class="lead-scoring-container">
+  <!-- Full screen loading overlay -->
+  <app-loading-overlay
+    [show]="showLoadingOverlay"
+    [title]="loadingTitle"
+    [message]="loadingMessage"
+    [showProgress]="showProgress"
+    [progress]="progress"
+  ></app-loading-overlay>
+
   <!-- Header -->
   <div class="page-header">
     <div>
@@ -47,13 +56,14 @@
       *ngFor="let filter of ['ALL', 'HOT', 'WARM', 'COLD', 'UNANALYZED']"
       class="filter-btn"
       [class.active]="selectedFilter === filter"
+      [disabled]="analyzing"
       (click)="applyFilter(filter)"
     >
       {{ filter === 'ALL' ? 'Semua' : filter === 'UNANALYZED' ? 'Belum Dianalisa' : filter }}
     </button>
   </div>
 
-  <!-- Loading State -->
+  <!-- Loading State (Initial Load) -->
   <div *ngIf="loading" class="loading-state">
     <div class="spinner"></div>
     <p>Memuat data...</p>
@@ -106,6 +116,7 @@
               <button 
                 class="btn-icon" 
                 (click)="showDetail(lead)"
+                [disabled]="analyzing"
               >
                 Detail
               </button>
