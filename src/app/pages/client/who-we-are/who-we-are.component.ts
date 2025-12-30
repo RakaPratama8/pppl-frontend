@@ -64,6 +64,7 @@ export class WhoWeAreComponent implements OnInit, AfterViewInit {
 
   heroTitle = 'Who We Are';
   heroSubtitle = 'Discover Pandigi\'s Journey and Values';
+  heroVector = 'vector_logo_pandigi.png';
 
   timelineItems: TimelineItem[] = [
     {
