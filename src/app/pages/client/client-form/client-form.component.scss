@@ -6,6 +6,60 @@
   position: relative;
 }
 
+.hero-section {
+    position: relative;
+    height: 75vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+
+    background: linear-gradient(135deg,
+            #0C2B40 0%,
+            #008080 98%);
+
+    overflow: hidden;
+}
+
+.building-image {
+    position: absolute;
+    bottom: 0;
+    right: -0.2%;
+    height: 90%;
+    z-index: 3;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 4;
+    padding-left: 4rem;
+    max-width: 650px;
+    color: white;
+}
+
+.hero-logo {
+    position: absolute;
+    top: 27%;
+    right: 17.5%;
+    width: 350px;
+    height: auto;
+    opacity: 0.3;
+    z-index: -999;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    text-align: left;
+}
+
+.hero-subtitle {
+    font-size: 1.15rem;
+    opacity: 0.9;
+    margin-bottom: 2.5rem;
+    font-weight: 200;
+}
+
 /* Floating Navbar */
 .navbar-floating {
   position: fixed;
